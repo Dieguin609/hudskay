@@ -1,5 +1,5 @@
 // ============================================================
-// CONFIGURAÇÕES DE ESCALA E VARIÁVEIS GLOBAIS
+// CONFIGURAÇÕES DE ESCALA (MTA / GTA CORE)
 // ============================================================
 const MAP_SIZE = 6000; 
 const IMG_SIZE = 2500; 
@@ -11,9 +11,17 @@ let startX, startY, mapX = 0, mapY = 0;
 
 const mapLayer = document.getElementById('big-map-layer');
 const mapImg = document.getElementById('full-map-img');
+const canvas = document.getElementById('map-canvas');
 const hud = document.getElementById('main-hud');
 
-// Conversor de Coordenadas (GTA -> Pixels)
+// Lista de locais para ícones (Blips) visíveis no mapa grande
+const blipsFixos = [
+    {id: 'hosp', x: 1242, y: -1694, icon: '🏥'},
+    {id: 'police', x: 1543, y: -1675, icon: '🚔'},
+    {id: 'mecanic', x: -2024, y: 156, icon: '🔧'}
+];
+
+// Conversor Global de Coordenadas
 function gtaToPixels(x, y) {
     return { 
         x: (IMG_SIZE / 2) + (x * SCALE), 
@@ -22,49 +30,63 @@ function gtaToPixels(x, y) {
 }
 
 // ============================================================
-// LÓGICA DE ABRIR/FECHAR MAPA E CONTROLE DE FOCO
+// LÓGICA DO MAPA GRANDE (TECLA H)
 // ============================================================
-function toggleMapa() {
-    // Verifica se o mapa está escondido
-    const estaFechado = (mapLayer.style.display === 'none' || mapLayer.style.display === '');
-    
-    if (estaFechado) {
-        // ABRIR MAPA
-        mapLayer.style.display = 'block';
-        hud.style.display = 'none'; // Esconde a HUD principal
-        
-        // Solicita ao jogo para liberar o mouse e focar no site
-        if (typeof cef !== 'undefined') {
-            cef.emit("setFocus", true);
-        }
 
-        // Centraliza o mapa na tela ao abrir
-        mapX = (window.innerWidth / 2) - (IMG_SIZE / 2);
-        mapY = (window.innerHeight / 2) - (IMG_SIZE / 2);
-        mapImg.style.left = mapX + 'px';
-        mapImg.style.top = mapY + 'px';
-    } else {
-        // FECHAR MAPA
-        mapLayer.style.display = 'none';
-        hud.style.display = 'block'; // Mostra a HUD principal de volta
-        
-        // Solicita ao jogo para devolver o foco para o teclado/mouse do personagem
-        if (typeof cef !== 'undefined') {
-            cef.emit("setFocus", false);
-        }
-    }
+function centralizarMapaNoCentroDoMundo() {
+    zoom = 1.0; 
+    // Posiciona o mapa para que a coordenada 0,0 fique no meio da tela do jogador
+    mapX = (window.innerWidth / 2) - (IMG_SIZE / 2);
+    mapY = (window.innerHeight / 2) - (IMG_SIZE / 2);
+
+    mapImg.style.transform = `scale(${zoom})`;
+    mapImg.style.left = mapX + 'px';
+    mapImg.style.top = mapY + 'px';
+    
+    renderizarBlipsNoMapa();
+    atualizarMarcadorGPS();
 }
 
-// Evento de tecla para o "H"
+function renderizarBlipsNoMapa() {
+    blipsFixos.forEach(local => {
+        let el = document.getElementById(`blip-${local.id}`);
+        if (!el) {
+            el = document.createElement('div');
+            el.id = `blip-${local.id}`;
+            el.className = 'blip-no-mapa';
+            el.innerHTML = local.icon;
+            canvas.appendChild(el);
+        }
+        const pos = gtaToPixels(local.x, local.y);
+        el.style.left = ((pos.x * zoom) + mapX) + 'px';
+        el.style.top = ((pos.y * zoom) + mapY) + 'px';
+    });
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'h') {
-        toggleMapa();
+        const abrindo = (mapLayer.style.display === 'none' || mapLayer.style.display === '');
+        mapLayer.style.display = abrindo ? 'block' : 'none';
+        hud.style.display = abrindo ? 'none' : 'block';
+        
+        if (abrindo) {
+            setTimeout(centralizarMapaNoCentroDoMundo, 10);
+            // AQUI: Ativa o mouse e tira o foco do teclado do jogo
+            if (typeof cef !== 'undefined') {
+                cef.emit("toggleCursor", true);
+                cef.emit("setFocus", true); 
+            }
+        } else {
+            // AQUI: Desativa o mouse e devolve o foco pro jogo
+            if (typeof cef !== 'undefined') {
+                cef.emit("toggleCursor", false);
+                cef.emit("setFocus", false);
+            }
+        }
     }
 });
 
-// ============================================================
-// MOVIMENTAÇÃO DO MAPA (ARRASTAR)
-// ============================================================
+// Movimentação do Mapa (Drag)
 mapLayer.addEventListener('mousedown', (e) => { 
     isDragging = true; 
     startX = e.clientX - mapX; 
@@ -77,44 +99,61 @@ window.addEventListener('mousemove', (e) => {
     mapY = e.clientY - startY;
     mapImg.style.left = mapX + 'px';
     mapImg.style.top = mapY + 'px';
+    renderizarBlipsNoMapa();
+    atualizarMarcadorGPS();
 });
 
-window.addEventListener('mouseup', () => {
-    isDragging = false;
+window.addEventListener('mouseup', () => isDragging = false);
+
+// Zoom
+mapLayer.addEventListener('wheel', (e) => {
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const nZoom = zoom * delta;
+    if (nZoom > 0.2 && nZoom < 3.0) {
+        zoom = nZoom;
+        mapImg.style.transform = `scale(${zoom})`;
+        renderizarBlipsNoMapa();
+        atualizarMarcadorGPS();
+    }
 });
 
-// ============================================================
-// INTEGRAÇÃO CEF (DINHEIRO, BANCO E RADAR)
-// ============================================================
-if (typeof cef !== 'undefined') {
-    // Atualiza Dinheiro e Banco (Não ignorado!)
-    cef.on("updateHud", (money, bank) => {
-        const handEl = document.getElementById("money-hand");
-        const bankEl = document.getElementById("money-bank");
-        if (handEl) handEl.innerText = money.toLocaleString('pt-BR');
-        if (bankEl) bankEl.innerText = bank.toLocaleString('pt-BR');
-    });
-
-    // Atualiza Posição no Minimapa (Radar Circular)
-    cef.on("updatePos", (x, y, angle) => {
-        const minimap = document.getElementById("map-img");
-        const arrow = document.querySelector(".player-arrow");
-        const pos = gtaToPixels(x, y);
-
-        if (minimap) {
-            // 85px é o centro do radar definido no seu CSS
-            minimap.style.left = `calc(85px - ${pos.x}px)`;
-            minimap.style.top = `calc(85px - ${pos.y}px)`;
-        }
-        if (arrow) {
-            arrow.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-        }
-    });
+// Função de Marcar GPS (Usada pelos botões e clique)
+function marcarLocal(gx, gy, nome) {
+    const pos = gtaToPixels(gx, gy);
+    const m = document.getElementById('gps-destination');
+    if(m) {
+        m.dataset.px = pos.x; 
+        m.dataset.py = pos.y;
+        m.style.display = 'block';
+        atualizarMarcadorGPS();
+    }
+    if (typeof cef !== 'undefined') cef.emit("setGPSRoute", gx, gy);
 }
 
+function atualizarMarcadorGPS() {
+    const m = document.getElementById('gps-destination');
+    if (!m || !m.dataset.px) return;
+    m.style.left = ((parseFloat(m.dataset.px) * zoom) + mapX) + 'px';
+    m.style.top = ((parseFloat(m.dataset.py) * zoom) + mapY) + 'px';
+}
+
+// Clique para marcar
+mapImg.addEventListener('click', (e) => {
+    if (isDragging) return;
+    const rect = mapImg.getBoundingClientRect();
+    const pxX = (e.clientX - rect.left) / zoom;
+    const pxY = (e.clientY - rect.top) / zoom;
+    const centerX = IMG_SIZE / 2;
+    const centerY = IMG_SIZE / 2;
+    const gtaX = (pxX - centerX) / SCALE;
+    const gtaY = (centerY - pxY) / SCALE;
+    marcarLocal(gtaX, gtaY, "Destino");
+});
+
 // ============================================================
-// RELÓGIO (Sempre ativo)
+// HUD PRINCIPAL (RELÓGIO, DINHEIRO, RADAR)
 // ============================================================
+
 function updateClock() {
     const now = new Date();
     const clockElement = document.getElementById('clock');
@@ -125,3 +164,26 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+if (typeof cef !== 'undefined') {
+    cef.on("updateHud", (money, bank) => {
+        const hand = document.getElementById("money-hand");
+        const bk = document.getElementById("money-bank");
+        if (hand) hand.innerText = money.toLocaleString('pt-BR');
+        if (bk) bk.innerText = bank.toLocaleString('pt-BR');
+    });
+
+    cef.on("updatePos", (x, y, angle) => {
+        const minimap = document.getElementById("map-img");
+        const arrow = document.querySelector(".player-arrow");
+        const pos = gtaToPixels(x, y);
+
+        if (minimap) {
+            minimap.style.left = `calc(85px - ${pos.x}px)`;
+            minimap.style.top = `calc(85px - ${pos.y}px)`;
+        }
+        if (arrow) {
+            arrow.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        }
+    });
+}
