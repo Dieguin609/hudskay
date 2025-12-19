@@ -37,11 +37,11 @@ function gtaToPixels(x, y) {
 }
 
 // ============================================================
-// FUNÇÕES DE EXIBIÇÃO E CEF (MANTER LOGICA ANTERIOR)
+// FUNÇÕES DE EXIBIÇÃO E OCULTAR HUD ORIGINAL
 // ============================================================
 function hideOriginalHud() {
     if (typeof cef !== 'undefined') {
-        // Usa o formato direto que você confirmou ser o correto
+        // Formato direto para ocultar radar e interface nativa
         cef.emit("game:hud:setComponentVisible", "radar", false);
         cef.emit("game:hud:setComponentVisible", "interface", false);
     }
@@ -68,15 +68,19 @@ function toggleMapa() {
 }
 
 // ============================================================
-// EVENTOS DE CONTROLE (ZOOM FOCO NA SETA DO MOUSE)
+// EVENTOS DE CONTROLE (TECLAS E MOUSE)
 // ============================================================
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
+    
+    // M abre e fecha a imagem do mapa
     if (key === 'm') toggleMapa();
     
+    // H fecha o mapa e pede para o Pawn tirar o foco do mouse
     if (key === 'h') {
         if (typeof cef !== 'undefined') {
             if (mapLayer && mapLayer.style.display === 'block') toggleMapa();
+            // Avisa o Pawn para dar cef_focus_browser(..., false)
             cef.emit("OnPlayerRequestUnfocus"); 
         }
     }
@@ -90,14 +94,12 @@ window.addEventListener('wheel', (e) => {
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
         const oldZoom = zoom;
         
-        // Calcula o novo zoom
         zoom = Math.min(Math.max(0.4, zoom + delta), 4.5);
         
-        // Posição do mouse para o zoom não "fugir"
         const mouseX = e.clientX;
         const mouseY = e.clientY;
 
-        // Ajusta mapX e mapY para que o ponto sob o mouse continue o mesmo
+        // Ajusta posição para o zoom seguir o cursor
         mapX -= (mouseX - mapX) * (zoom / oldZoom - 1);
         mapY -= (mouseY - mapY) * (zoom / oldZoom - 1);
         
@@ -105,6 +107,7 @@ window.addEventListener('wheel', (e) => {
     }
 }, { passive: false });
 
+// ARRASTAR O MAPA
 if (mapLayer) {
     mapLayer.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
@@ -140,7 +143,7 @@ mapLayer?.addEventListener('contextmenu', (e) => {
 });
 
 // ============================================================
-// RENDERIZAÇÃO E ATUALIZAÇÃO (LOOP FLUIDO)
+// RENDERIZAÇÃO E ATUALIZAÇÃO (SETAS E BLIPS)
 // ============================================================
 
 function renderizarBlipsNoMapa() {
@@ -164,7 +167,7 @@ function renderizarBlipsNoMapa() {
         canvas.appendChild(div);
     });
 
-    // Seta do Jogador
+    // Seta do Jogador - CORRIGIDA: usei "-playerAngle" para desinverter
     const pPos = gtaToPixels(playerPosX, playerPosY);
     const pDiv = document.createElement('div');
     pDiv.innerHTML = '▲';
@@ -173,7 +176,7 @@ function renderizarBlipsNoMapa() {
     pDiv.style.fontSize = '22px';
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
-    pDiv.style.transform = `translate(-50%, -50%) rotate(${playerAngle}deg) scale(${1.2/zoom})`;
+    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.2/zoom})`;
     canvas.appendChild(pDiv);
 }
 
@@ -226,8 +229,10 @@ if (typeof cef !== 'undefined') {
     });
 
     cef.on("browser:ready", () => {
+        // Tenta esconder a HUD original em tempos diferentes para garantir
         hideOriginalHud();
-        setTimeout(hideOriginalHud, 1000);
+        setTimeout(hideOriginalHud, 500);
+        setTimeout(hideOriginalHud, 2000);
     });
 }
 
