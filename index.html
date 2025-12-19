@@ -2,8 +2,10 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <title>SkyPixel HUD</title>
 </head>
 <body>
     <div id="main-hud">
@@ -15,8 +17,8 @@
             <img src="overlay.png" class="overlay-img">
             <div class="info-data">
                 <div id="clock" class="text-item clock-pos">00:00</div>
-                <div id="money-hand" class="text-item money-pos">00000</div>
-                <div id="money-bank" class="text-item bank-pos">00000</div>
+                <div id="money-hand" class="text-item money-pos">0</div>
+                <div id="money-bank" class="text-item bank-pos">0</div>
             </div>
         </div>
 
@@ -30,8 +32,12 @@
 
     <div id="big-map-layer" style="display: none;">
         
+        <div id="map-container">
+            <img src="map.png" id="full-map-img">
+            <div id="map-canvas"></div> </div>
+
         <div class="map-locations-float">
-            <div class="location-header">LOCAIS</div>
+            <div class="location-header">LOCAIS RÁPIDOS</div>
             <div class="location-item-alt" onclick="marcarLocal(1242, -1694, 'Hospital')">
                 <span>🏥</span> Hospital
             </div>
@@ -41,13 +47,8 @@
             <div class="location-item-alt" onclick="marcarLocal(-2024, 156, 'Mecânica')">
                 <span>🔧</span> Mecânica
             </div>
+            <div class="location-footer">Clique com o botão direito para marcar destino</div>
         </div>
-
-        <div id="map-canvas">
-            <img src="map.png" id="full-map-img">
-            <div id="gps-destination"></div>
-        </div>
-
     </div>
 
     <script src="script.js"></script>
