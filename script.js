@@ -41,6 +41,7 @@ function gtaToPixels(x, y) {
 // ============================================================
 function hideOriginalHud() {
     if (typeof cef !== 'undefined') {
+        // Usa o formato direto que você confirmou ser o correto
         cef.emit("game:hud:setComponentVisible", "radar", false);
         cef.emit("game:hud:setComponentVisible", "interface", false);
     }
@@ -54,7 +55,7 @@ function toggleMapa() {
         mapLayer.style.display = 'block';
         if (hud) hud.style.display = 'none';
         
-        // Centraliza o mapa no jogador ao abrir (Primeira abertura)
+        // Centraliza o mapa no jogador ao abrir
         const pos = gtaToPixels(playerPosX, playerPosY);
         mapX = (window.innerWidth / 2) - (pos.x * zoom);
         mapY = (window.innerHeight / 2) - (pos.y * zoom);
@@ -81,7 +82,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// LOGICA DE ZOOM IGUAL GTA V: FOCA NA SETA DO MOUSE
+// LOGICA DE ZOOM ESTILO GTA V: FOCA NA SETA DO MOUSE
 window.addEventListener('wheel', (e) => {
     if (mapLayer && mapLayer.style.display === 'block') {
         e.preventDefault();
@@ -92,11 +93,11 @@ window.addEventListener('wheel', (e) => {
         // Calcula o novo zoom
         zoom = Math.min(Math.max(0.4, zoom + delta), 4.5);
         
-        // PEGA A POSIÇÃO DO MOUSE PARA O ZOOM NÃO BUGAR E O MAPA NÃO SUMIR
+        // Posição do mouse para o zoom não "fugir"
         const mouseX = e.clientX;
         const mouseY = e.clientY;
 
-        // Ajusta a posição do mapa (mapX, mapY) para que o ponto sob o mouse continue o mesmo
+        // Ajusta mapX e mapY para que o ponto sob o mouse continue o mesmo
         mapX -= (mouseX - mapX) * (zoom / oldZoom - 1);
         mapY -= (mouseY - mapY) * (zoom / oldZoom - 1);
         
@@ -127,7 +128,7 @@ if (mapLayer) {
     });
 }
 
-// Marcar Local com Botão Direito
+// Marcar Local com Botão Direito (GPS)
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const rect = mapImg.getBoundingClientRect();
@@ -145,7 +146,6 @@ mapLayer?.addEventListener('contextmenu', (e) => {
 function renderizarBlipsNoMapa() {
     if (!canvas || !mapImg) return;
     
-    // Aplica o movimento e o zoom sincronizados
     const transformStyle = `translate(${mapX}px, ${mapY}px) scale(${zoom})`;
     mapImg.style.transform = transformStyle;
     canvas.style.transform = transformStyle;
@@ -159,7 +159,6 @@ function renderizarBlipsNoMapa() {
         div.style.position = 'absolute';
         div.style.left = `${pos.x}px`;
         div.style.top = `${pos.y}px`;
-        // escala inversa para o ícone não ficar gigante no zoom
         div.style.transform = `translate(-50%, -50%) scale(${1.2/zoom})`; 
         div.innerHTML = blip.icon;
         canvas.appendChild(div);
