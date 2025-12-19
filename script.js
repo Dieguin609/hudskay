@@ -41,7 +41,7 @@ function gtaToPixels(x, y) {
 // ============================================================
 function hideOriginalHud() {
     if (typeof cef !== 'undefined') {
-        // Formato direto para ocultar radar e interface nativa
+        // CORREÇÃO: Força a ocultação da interface e do radar nativo do GTA
         cef.emit("game:hud:setComponentVisible", "radar", false);
         cef.emit("game:hud:setComponentVisible", "interface", false);
     }
@@ -80,7 +80,7 @@ window.addEventListener('keydown', (e) => {
     if (key === 'h') {
         if (typeof cef !== 'undefined') {
             if (mapLayer && mapLayer.style.display === 'block') toggleMapa();
-            // Avisa o Pawn para dar cef_focus_browser(..., false)
+            // CHAMA O EVENTO QUE VOCÊ CONFIGUROU NO PAWN (cef_subscribe)
             cef.emit("OnPlayerRequestUnfocus"); 
         }
     }
@@ -229,8 +229,9 @@ if (typeof cef !== 'undefined') {
     });
 
     cef.on("browser:ready", () => {
-        // Tenta esconder a HUD original em tempos diferentes para garantir
+        // Tenta esconder a HUD original em tempos diferentes para garantir que não volte
         hideOriginalHud();
+        setTimeout(hideOriginalHud, 100);
         setTimeout(hideOriginalHud, 500);
         setTimeout(hideOriginalHud, 2000);
     });
