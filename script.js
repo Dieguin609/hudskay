@@ -77,11 +77,18 @@ window.addEventListener('keydown', (e) => {
     // H fecha o mapa e pede para o Pawn tirar o foco do mouse
     if (key === 'h') {
         if (typeof cef !== 'undefined') {
-            if (mapLayer && mapLayer.style.display === 'block') toggleMapa();
-            // CHAMA O EVENTO QUE VOCÊ CONFIGUROU NO PAWN (cef_subscribe)
-            cef.emit("server:setFocus", id);
+            // 1. Fecha a div do mapa se estiver aberta
+            if (mapLayer && mapLayer.style.display === 'block') {
+                mapLayer.style.display = 'none';
+                if (hud) hud.style.display = 'block';
+            }
+            
+            // 2. EMITE PARA O PAWN (Seguindo o padrão que você gosta)
+            // Aqui enviamos o evento "fecharFocoMapa"
+            cef.emit("fecharFocoMapa"); 
         }
     }
+    
 });
 
 // LOGICA DE ZOOM ESTILO GTA V: FOCA NA SETA DO MOUSE
