@@ -181,7 +181,7 @@ function renderizarBlipsNoMapa() {
     pDiv.style.fontSize = '22px';
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
-    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.2/zoom})`;
+    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle + 180}deg) scale(${1.2/zoom})`;
     canvas.appendChild(pDiv);
 }
 
