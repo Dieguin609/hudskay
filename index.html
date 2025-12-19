@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="main-hud">
+        <div class="logo-container">
+            <img src="Logo.png" class="main-logo">
+        </div>
+
+        <div class="hud-right-top">
+            <img src="overlay.png" class="overlay-img">
+            <div class="info-data">
+                <div id="clock" class="text-item clock-pos">00:00</div>
+                <div id="money-hand" class="text-item money-pos">00000</div>
+                <div id="money-bank" class="text-item bank-pos">00000</div>
+            </div>
+        </div>
+
+        <div class="minimap-area">
+            <div class="minimap-circle">
+                <img src="map.png" id="map-img">
+                <div class="player-arrow"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="big-map-layer" style="display: none;">
+        
+        <div class="map-locations-float">
+            <div class="location-header">LOCAIS</div>
+            <div class="location-item-alt" onclick="marcarLocal(1242, -1694, 'Hospital')">
+                <span>🏥</span> Hospital
+            </div>
+            <div class="location-item-alt" onclick="marcarLocal(1543, -1675, 'Delegacia')">
+                <span>🚔</span> Delegacia
+            </div>
+            <div class="location-item-alt" onclick="marcarLocal(-2024, 156, 'Mecânica')">
+                <span>🔧</span> Mecânica
+            </div>
+        </div>
+
+        <div id="map-canvas">
+            <img src="map.png" id="full-map-img">
+            <div id="gps-destination"></div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
