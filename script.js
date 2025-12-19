@@ -9,10 +9,11 @@ let zoom = 1.0;
 let isDragging = false;
 let startX, startY, mapX = 0, mapY = 0;
 
-// Variáveis para guardar a posição atual e usar no mapa grande
+// Variáveis de Posição e Suavização (Fluidez)
 let playerPosX = 0;
 let playerPosY = 0;
 let playerAngle = 0;
+let currentRotation = 0; // Para o mapa girar liso
 
 const mapLayer = document.getElementById('big-map-layer');
 const mapImg = document.getElementById('full-map-img');
@@ -35,6 +36,17 @@ function gtaToPixels(x, y) {
 }
 
 // ============================================================
+// INICIALIZAÇÃO E ESCONDER HUD ORIGINAL
+// ============================================================
+if (typeof cef !== 'undefined') {
+    cef.on("browser:ready", () => {
+        // Esconde tudo que é nativo do GTA
+        cef.emit("game:hud:setComponentVisible", "radar", false);
+        cef.emit("game:hud:setComponentVisible", "interface", false);
+    });
+}
+
+// ============================================================
 // SISTEMA DE MAPA GRANDE (ZOOM, ARRASTE, MARCAÇÃO)
 // ============================================================
 
@@ -43,13 +55,11 @@ function toggleMapa() {
     if (mapLayer.style.display === 'none' || mapLayer.style.display === '') {
         mapLayer.style.display = 'block';
         if (hud) hud.style.display = 'none';
-        // Envia para o PAWN que o cursor deve aparecer
         if (typeof cef !== 'undefined') cef.emit("toggleCursor", true);
         renderizarBlipsNoMapa();
     } else {
         mapLayer.style.display = 'none';
         if (hud) hud.style.display = 'block';
-        // Envia para o PAWN que o cursor deve sumir
         if (typeof cef !== 'undefined') cef.emit("toggleCursor", false);
     }
 }
@@ -68,7 +78,7 @@ window.addEventListener('wheel', (e) => {
 // Arrastar Mapa (MANTIDO)
 if (mapLayer) {
     mapLayer.addEventListener('mousedown', (e) => {
-        if (e.button === 0) { // Botão esquerdo
+        if (e.button === 0) {
             isDragging = true;
             startX = e.clientX - mapX;
             startY = e.clientY - mapY;
@@ -93,32 +103,26 @@ mapLayer?.addEventListener('contextmenu', (e) => {
     const rect = mapImg.getBoundingClientRect();
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
-    
     const centerX = IMG_SIZE / 2;
     const centerY = IMG_SIZE / 2;
-    
     const gtaX = (pxX - centerX) / SCALE;
     const gtaY = (centerY - pxY) / SCALE;
-    
     marcarLocal(gtaX, gtaY, "Destino");
 });
 
 function marcarLocal(x, y, nome) {
-    console.log(`Marcando GPS em: ${x}, ${y}`);
     if (typeof cef !== 'undefined') {
         cef.emit("setGPS", x, y);
     }
 }
 
 // ============================================================
-// RENDERIZAÇÃO DE ÍCONES (BLIPS) NO MAPA GRANDE
+// LÓGICA DE ATUALIZAÇÃO FLUIDA (ANIMATION FRAME)
 // ============================================================
 
 function renderizarBlipsNoMapa() {
     if (!canvas) return;
     canvas.innerHTML = ''; 
-
-    // Blips Estáticos (Hospital, etc)
     blipsFixos.forEach(blip => {
         const pos = gtaToPixels(blip.x, blip.y);
         const div = document.createElement('div');
@@ -129,7 +133,6 @@ function renderizarBlipsNoMapa() {
         canvas.appendChild(div);
     });
 
-    // BLIP DO JOGADOR NO MAPA GRANDE (ADICIONADO)
     const pPos = gtaToPixels(playerPosX, playerPosY);
     const pDiv = document.createElement('div');
     pDiv.id = 'player-big-blip';
@@ -143,8 +146,37 @@ function renderizarBlipsNoMapa() {
     canvas.appendChild(pDiv);
 }
 
+// Função que roda 60 vezes por segundo para dar fluidez
+function loopFluido() {
+    const minimap = document.getElementById("map-img");
+    const arrow = document.querySelector(".player-arrow");
+    const pos = gtaToPixels(playerPosX, playerPosY);
+
+    if (minimap) {
+        // Suaviza a rotação do mapa (Interpolação)
+        let targetRot = -playerAngle; 
+        let diff = targetRot - currentRotation;
+        while (diff < -180) diff += 360;
+        while (diff > 180) diff -= 360;
+        currentRotation += diff * 0.15; // 0.15 é a velocidade da suavização
+
+        minimap.style.left = `calc(50% - ${pos.x}px)`;
+        minimap.style.top = `calc(50% - ${pos.y}px)`;
+        minimap.style.transform = `rotate(${currentRotation}deg)`;
+        minimap.style.transformOrigin = `${pos.x}px ${pos.y}px`;
+    }
+
+    // A seta gira conforme o playerAngle no centro
+    if (arrow) {
+        arrow.style.transform = `translate(-50%, -50%) rotate(0deg)`; // No GTA SA a seta é fixa no centro quando o mapa gira
+    }
+
+    requestAnimationFrame(loopFluido);
+}
+requestAnimationFrame(loopFluido);
+
 // ============================================================
-// HUD PRINCIPAL (RELÓGIO, DINHEIRO, RADAR)
+// HUD PRINCIPAL (RELÓGIO, DINHEIRO, EVENTOS)
 // ============================================================
 
 function updateClock() {
@@ -159,7 +191,6 @@ setInterval(updateClock, 1000);
 updateClock();
 
 if (typeof cef !== 'undefined') {
-    // Tecla H enviada pelo Servidor (ADICIONADO)
     cef.on("tentarAbrirMapa", () => {
         toggleMapa();
     });
@@ -172,24 +203,10 @@ if (typeof cef !== 'undefined') {
     });
 
     cef.on("updatePos", (x, y, angle) => {
-        // Guarda para o mapa grande
         playerPosX = x;
         playerPosY = y;
         playerAngle = angle;
 
-        const minimap = document.getElementById("map-img");
-        const arrow = document.querySelector(".player-arrow");
-        const pos = gtaToPixels(x, y);
-
-        if (minimap) {
-            // LÓGICA GTA SA: Mapa gira, seta fica fixa (ADICIONADO)
-            minimap.style.left = `calc(50% - ${pos.x}px)`;
-            minimap.style.top = `calc(50% - ${pos.y}px)`;
-            minimap.style.transform = `rotate(${-angle}deg)`;
-            minimap.style.transformOrigin = `${pos.x}px ${pos.y}px`;
-        }
-        
-        // Se o mapa grande estiver aberto, atualiza os blips
         if (mapLayer && mapLayer.style.display === 'block') {
             renderizarBlipsNoMapa();
         }
