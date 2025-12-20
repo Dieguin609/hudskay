@@ -25,13 +25,17 @@
         <div class="minimap-area">
             <div class="minimap-circle">
                 <img src="map.png" id="map-img">
+                
+                <svg id="gps-svg-mini" style="position: absolute; top: 0; left: 0; width: 2500px; height: 2500px; pointer-events: none; z-index: 2;">
+                    <polyline id="gps-path-mini" points="" style="fill:none; stroke:#bf00ff; stroke-width:45; stroke-linejoin:round; stroke-linecap:round;" />
+                </svg>
+
                 <div class="player-arrow"></div>
             </div>
         </div>
     </div>
 
     <div id="big-map-layer" style="display: none;">
-        
         <div id="map-container">
             <img src="map.png" id="full-map-img">
 
