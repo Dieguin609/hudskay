@@ -124,59 +124,66 @@ body {
     height: 2500px;
     z-index: 3; /* Ícones no topo */
 }
-
 /* ============================================================
-   MENU DE LOCAIS (ESTILO MODERNO)
+   MENU DE LOCAIS (VERSÃO MINI ARREDONDADA)
    ============================================================ */
 .map-locations-float {
     position: absolute;
-    right: 30px;
-    top: 30px;
+    right: 20px; /* Mais colado na borda */
+    top: 40px;
     z-index: 10000;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-}
-
-.location-header {
-    color: #bf00ff;
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-align: right;
-    margin-bottom: 5px;
-    text-shadow: 0 0 10px rgba(191, 0, 255, 0.3);
+    align-items: flex-end; 
+    gap: 6px; /* Espaço menor entre os blocos */
 }
 
 .location-item-alt {
-    background: rgba(10, 10, 10, 0.85);
-    border-right: 4px solid #bf00ff;
-    color: #fff;
-    padding: 12px 20px;
-    min-width: 220px;
-    border-radius: 4px 0 0 4px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 15px;
+    background: rgba(11, 4, 114, 0.92); 
+    color: #ffffff;
+    padding: 5px 12px; /* Padding reduzido para ficar menor */
+    border-radius: 10px; /* Bordas bem arredondadas */
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    transition: all 0.2s;
+    min-width: 140px; /* Largura reduzida */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Item de destaque (Roxo) */
+.location-item-alt:first-child {
+    background: #bf00ff;
+    box-shadow: 0 0 12px rgba(191, 0, 255, 0.5);
 }
 
 .location-item-alt:hover {
-    background: rgba(191, 0, 255, 0.15);
-    transform: translateX(-5px);
+    transform: translateX(-5px); /* Em vez de crescer, ele desliza pro lado */
+    background: #e93f9c;
+    color: #000000;
 }
 
-.loc-info { text-align: right; }
-.loc-name { display: block; font-size: 14px; font-weight: 700; }
-.loc-dist { display: block; font-size: 10px; color: #aaa; text-transform: none; }
-.loc-icon { font-size: 20px; }
+.loc-icon {
+    font-size: 14px; /* Emoji menor */
+    margin-right: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    width: 28px; /* Quadrado do ícone menor */
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+}
 
-.location-footer {
-    color: #666;
-    font-size: 11px;
-    text-align: right;
-    margin-top: 10px;
-    line-height: 1.4;
+.loc-name {
+    font-size: 11px; /* Letra pequena e nítida */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Esconder o que não precisa para manter o minimalismo */
+.location-header, .loc-dist, .location-footer {
+    display: none;
 }

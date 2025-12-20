@@ -49,10 +49,6 @@ function gpsParaLocal(x, y, nome) {
     }
 }
 
-/**
- * Desenha a linha roxa no SVG do Mapa Grande e do Minimapa simultaneamente.
- * Ela vai se modificando conforme o player anda se o servidor reenviar a rota atualizada.
- */
 function atualizarLinhaGPS(pontosString) {
     const gpsPathGrande = document.getElementById('gps-path');
     const gpsPathMini = document.getElementById('gps-path-mini');
@@ -63,7 +59,6 @@ function atualizarLinhaGPS(pontosString) {
         return;
     }
 
-    // Formato esperado: "x,y|x,y|x,y"
     const pontos = pontosString.split('|');
     let svgPoints = "";
 
@@ -112,9 +107,7 @@ function toggleMapa() {
 function renderizarBlipsNoMapa() {
     if (!mapContainer || !canvas) return;
     
-    // Move Imagem + SVG + Canvas juntos
     mapContainer.style.transform = `translate(${mapX}px, ${mapY}px) scale(${zoom})`;
-    
     canvas.innerHTML = ''; 
 
     blipsFixos.forEach(blip => {
@@ -146,7 +139,7 @@ function renderizarBlipsNoMapa() {
 
 function loopFluido() {
     const minimap = document.getElementById("map-img");
-    const gpsMini = document.getElementById("gps-svg-mini"); // SVG da rota no minimapa
+    const gpsMini = document.getElementById("gps-svg-mini"); 
     const arrow = document.querySelector(".player-arrow");
     const pos = gtaToPixels(playerPosX, playerPosY);
 
@@ -157,7 +150,6 @@ function loopFluido() {
         while (diff > 180) diff -= 360;
         currentRotation += diff * 0.15; 
 
-        // Rotaciona o mapa e a rota juntos no radar
         const transformCSS = `rotate(${currentRotation}deg)`;
         const originCSS = `${pos.x}px ${pos.y}px`;
         const leftTopCSS = {
@@ -190,7 +182,7 @@ function loopFluido() {
     requestAnimationFrame(loopFluido);
 }
 
-// Eventos de Mouse e Teclado
+// EventOS de Mouse e Teclado
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (key === 'm') toggleMapa();
