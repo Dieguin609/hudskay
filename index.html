@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -35,26 +34,48 @@
         
         <div id="map-container">
             <img src="map.png" id="full-map-img">
-            <div id="map-canvas"></div> </div>
+
+            <svg id="gps-svg" width="2500" height="2500">
+                <polyline id="gps-path" points="" />
+            </svg>
+
+            <div id="map-canvas"></div> 
+        </div>
 
         <div class="map-locations-float">
-            <div class="location-header">LOCAIS RÁPIDOS</div>
-            <div class="location-item-alt" onclick="marcarLocal(1242, -1694, 'Hospital')">
-                <span>🏥</span> Hospital
+            <div class="location-header">SISTEMA DE GPS</div>
+            
+            <div class="location-item-alt" onclick="gpsParaLocal(1242, -1694, 'Hospital')">
+                <div class="loc-icon">🏥</div>
+                <div class="loc-info">
+                    <span class="loc-name">Hospital Central</span>
+                    <span class="loc-dist">Clique para traçar rota</span>
+                </div>
             </div>
-            <div class="location-item-alt" onclick="marcarLocal(1543, -1675, 'Delegacia')">
-                <span>🚔</span> Delegacia
+
+            <div class="location-item-alt" onclick="gpsParaLocal(1543, -1675, 'Delegacia')">
+                <div class="loc-icon">🚔</div>
+                <div class="loc-info">
+                    <span class="loc-name">DP Los Santos</span>
+                    <span class="loc-dist">Clique para traçar rota</span>
+                </div>
             </div>
-            <div class="location-item-alt" onclick="marcarLocal(-2024, 156, 'Mecânica')">
-                <span>🔧</span> Mecânica
+
+            <div class="location-item-alt" onclick="gpsParaLocal(-2024, 156, 'Mecânica')">
+                <div class="loc-icon">🔧</div>
+                <div class="loc-info">
+                    <span class="loc-name">Mecânica Benny's</span>
+                    <span class="loc-dist">Clique para traçar rota</span>
+                </div>
             </div>
-            <div class="location-footer">Clique com o botão direito para marcar destino</div>
+
+            <div class="location-footer">
+                Botão Direito: Marcar Destino Livre<br>
+                Aperte 'H' para liberar o mouse
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
-
 </html>
-
-

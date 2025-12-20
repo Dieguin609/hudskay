@@ -9,22 +9,26 @@ let zoom = 1.0;
 let isDragging = false;
 let startX, startY, mapX = 0, mapY = 0;
 
-// Variáveis de Posição e Suavização (Fluidez)
+// Variáveis de Posição e Suavização
 let playerPosX = 0;
 let playerPosY = 0;
 let playerAngle = 0;
-let currentRotation = 0;      // Suavização do mapa (Radar)
-let currentArrowRotation = 0; // Suavização da seta
+let currentRotation = 0;      
+let currentArrowRotation = 0; 
 
+// Elementos do DOM
 const mapLayer = document.getElementById('big-map-layer');
+const mapContainer = document.getElementById('map-container'); // O NOVO PAI
 const mapImg = document.getElementById('full-map-img');
 const canvas = document.getElementById('map-canvas');
+const gpsPath = document.getElementById('gps-path'); // A LINHA ROXA
 const hud = document.getElementById('main-hud');
 
+// Blips com nomes para o novo sistema
 const blipsFixos = [
-    {id: 'hosp', x: 1242, y: -1694, icon: '🏥'},
-    {id: 'police', x: 1543, y: -1675, icon: '🚔'},
-    {id: 'mecanic', x: -2024, y: 156, icon: '🔧'}
+    {id: 'hosp', x: 1242, y: -1694, icon: '🏥', nome: 'Hospital'},
+    {id: 'police', x: 1543, y: -1675, icon: '🚔', nome: 'Delegacia'},
+    {id: 'mecanic', x: -2024, y: 156, icon: '🔧', nome: 'Mecânica'}
 ];
 
 // Conversor Global de Coordenadas
@@ -36,7 +40,41 @@ function gtaToPixels(x, y) {
 }
 
 // ============================================================
-// FUNÇÕES DE EXIBIÇÃO E OCULTAR HUD ORIGINAL
+// FUNÇÕES DE GPS E INTERFACE
+// ============================================================
+
+// Função chamada pelos botões do menu lateral
+function gpsParaLocal(x, y, nome) {
+    if (typeof cef !== 'undefined') {
+        // Emite para o Pawn calcular a rota
+        cef.emit("setGPS", x, y);
+        console.log(`Traçando rota para: ${nome}`);
+    }
+}
+
+// Desenha a linha roxa no SVG
+function atualizarLinhaGPS(pontosString) {
+    if (!gpsPath) return;
+    if (!pontosString || pontosString === "") {
+        gpsPath.setAttribute('points', "");
+        return;
+    }
+
+    // Formato esperado: "x,y|x,y|x,y"
+    const pontos = pontosString.split('|');
+    let svgPoints = "";
+
+    pontos.forEach(p => {
+        const coord = p.split(',');
+        const pos = gtaToPixels(parseFloat(coord[0]), parseFloat(coord[1]));
+        svgPoints += `${pos.x},${pos.y} `;
+    });
+
+    gpsPath.setAttribute('points', svgPoints);
+}
+
+// ============================================================
+// FUNÇÕES DE EXIBIÇÃO
 // ============================================================
 function hideOriginalHud() {
     if (typeof cef !== 'undefined' && cef.emit) {
@@ -44,9 +82,6 @@ function hideOriginalHud() {
         cef.emit("game:hud:setComponentVisible", "radar", false);
     }
 }
-
-// Executa ao carregar
-hideOriginalHud();
 
 function toggleMapa() {
     if (!mapLayer) return;
@@ -72,37 +107,31 @@ function toggleMapa() {
 // ============================================================
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
-    
     if (key === 'm') toggleMapa();
-    
     if (key === 'h') {
         if (typeof cef !== 'undefined') {
-            if (mapLayer && mapLayer.style.display === 'block') {
-                mapLayer.style.display = 'none';
-                if (hud) hud.style.display = 'block';
-            }
-            // SINAL PARA O PAWN RETIRAR O FOCO (Subscribed no OnGameModeInit)
+            if (mapLayer && mapLayer.style.display === 'block') toggleMapa();
             cef.emit("fecharFocoMapa"); 
         }
     }
 });
 
-// ZOOM ESTILO GTA V
 window.addEventListener('wheel', (e) => {
     if (mapLayer && mapLayer.style.display === 'block') {
         e.preventDefault();
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
         const oldZoom = zoom;
         zoom = Math.min(Math.max(0.4, zoom + delta), 4.5);
+        
         const mouseX = e.clientX;
         const mouseY = e.clientY;
         mapX -= (mouseX - mapX) * (zoom / oldZoom - 1);
         mapY -= (mouseY - mapY) * (zoom / oldZoom - 1);
+        
         renderizarBlipsNoMapa();
     }
 }, { passive: false });
 
-// ARRASTAR O MAPA
 if (mapLayer) {
     mapLayer.addEventListener('mousedown', (e) => {
         if (e.button === 0) {
@@ -124,7 +153,6 @@ if (mapLayer) {
     });
 }
 
-// GPS MARCAR LOCAL
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const rect = mapImg.getBoundingClientRect();
@@ -136,37 +164,37 @@ mapLayer?.addEventListener('contextmenu', (e) => {
 });
 
 // ============================================================
-// RENDERIZAÇÃO E ATUALIZAÇÃO (SETAS E BLIPS)
+// RENDERIZAÇÃO
 // ============================================================
 
 function renderizarBlipsNoMapa() {
-    if (!canvas || !mapImg) return;
+    if (!mapContainer || !canvas) return;
     
-    const transformStyle = `translate(${mapX}px, ${mapY}px) scale(${zoom})`;
-    mapImg.style.transform = transformStyle;
-    canvas.style.transform = transformStyle;
+    // Aplica a transformação no CONTAINER (Move Imagem + SVG + Canvas juntos)
+    mapContainer.style.transform = `translate(${mapX}px, ${mapY}px) scale(${zoom})`;
+    
     canvas.innerHTML = ''; 
 
     blipsFixos.forEach(blip => {
         const pos = gtaToPixels(blip.x, blip.y);
         const div = document.createElement('div');
-        div.style.position = 'absolute';
+        div.className = 'blip-container';
         div.style.left = `${pos.x}px`;
         div.style.top = `${pos.y}px`;
-        div.style.transform = `translate(-50%, -50%) scale(${1.2/zoom})`; 
-        div.innerHTML = blip.icon;
+        // Escala inversa para o ícone não sumir no zoom
+        div.style.transform = `translate(-50%, -50%) scale(${1.1/zoom})`; 
+        div.innerHTML = `<span style="font-size: 20px;">${blip.icon}</span>`;
         canvas.appendChild(div);
     });
 
     const pPos = gtaToPixels(playerPosX, playerPosY);
     const pDiv = document.createElement('div');
-    pDiv.innerHTML = '▲'; // Voltamos para o ▲ porque agora o ângulo está corrigido
+    pDiv.innerHTML = '▲'; 
     pDiv.style.position = 'absolute';
-    pDiv.style.color = '#3498db';
+    pDiv.style.color = '#bf00ff'; // Seta roxa no mapa grande para combinar
     pDiv.style.fontSize = '22px';
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
-    // CORREÇÃO DA SETA: Girando para olhar pra frente corretamente
     pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.2/zoom})`;
     canvas.appendChild(pDiv);
 }
@@ -177,9 +205,7 @@ function loopFluido() {
     const pos = gtaToPixels(playerPosX, playerPosY);
 
     if (minimap) {
-        // CORREÇÃO DO GIRO DO MAPA: Removido o "-" para inverter o eixo Y do giro
         let targetRot = playerAngle; 
-        
         let diff = targetRot - currentRotation;
         while (diff < -180) diff += 360;
         while (diff > 180) diff -= 360;
@@ -192,7 +218,6 @@ function loopFluido() {
     }
 
     if (arrow) {
-        // Seta do radar acompanhando o giro corrigido
         let targetArrowRot = playerAngle + currentRotation;
         let diffArrow = targetArrowRot - currentArrowRotation;
         while (diffArrow < -180) diffArrow += 360;
@@ -205,7 +230,7 @@ function loopFluido() {
 }
 
 // ============================================================
-// RECEBIMENTO DE DADOS DO SERVIDOR (CEF)
+// RECEBIMENTO DE DADOS CEF
 // ============================================================
 if (typeof cef !== 'undefined') {
     cef.on("updatePos", (x, y, angle) => {
@@ -213,6 +238,11 @@ if (typeof cef !== 'undefined') {
         playerPosY = y;
         playerAngle = angle;
         if (mapLayer && mapLayer.style.display === 'block') renderizarBlipsNoMapa();
+    });
+
+    // ESCUTA PARA ATUALIZAR A LINHA DO GPS (Vindo do Pawn)
+    cef.on("updateGPSPath", (pathData) => {
+        atualizarLinhaGPS(pathData);
     });
 
     cef.on("updateHud", (money, bank) => {
@@ -225,11 +255,11 @@ if (typeof cef !== 'undefined') {
     cef.on("browser:ready", () => {
         hideOriginalHud();
         setTimeout(hideOriginalHud, 100);
-        setTimeout(hideOriginalHud, 500);
         setTimeout(hideOriginalHud, 2000);
     });
 }
 
+// Clock e Loop
 function updateClock() {
     const clockElement = document.getElementById('clock');
     if (clockElement) {
