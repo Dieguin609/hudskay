@@ -62,14 +62,13 @@ function gtaToPixels(x, y) {
 /**
  * Força a ocultação dos componentes originais do GTA
  */
+// ============================================================
+// FUNÇÕES DE EXIBIÇÃO
+// ============================================================
 function hideOriginalHud() {
     if (typeof cef !== 'undefined' && cef.emit) {
-        // Oculta Radar, Dinheiro, Armas e Interface padrão
         cef.emit("game:hud:setComponentVisible", "interface", false);
         cef.emit("game:hud:setComponentVisible", "radar", false);
-        cef.emit("game:hud:setComponentVisible", "area_name", false);
-        cef.emit("game:hud:setComponentVisible", "vehicle_name", false);
-        cef.emit("game:hud:setComponentVisible", "help_text", false);
     }
 }
 
@@ -125,16 +124,14 @@ function atualizarLinhaGPS(pontosString) {
         }
     });
 
-    // Aplica no Mapa Grande
     if (gpsPathGrande) {
         gpsPathGrande.setAttribute('points', svgPoints);
+        gpsPathGrande.setAttribute('stroke-width', "8"); // Espessura Mapa Aberto
     }
-    
-    // Aplica no Minimapa com correção de espessura
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // O Minimapa é muito pequeno, se a linha for grossa vira um borrão
-        gpsPathMini.setAttribute('stroke-width', "15"); 
+        // REDUÇÃO AQUI: Valor menor para a linha não ficar gigante no minimapa
+        gpsPathMini.setAttribute('stroke-width', "3.5"); 
     }
 }
 
