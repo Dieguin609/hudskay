@@ -131,7 +131,7 @@ function atualizarLinhaGPS(pontosString) {
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
         // REDUÇÃO AQUI: Valor menor para a linha não ficar gigante no minimapa
-        gpsPathMini.setAttribute('stroke-width', "3.5"); 
+        gpsPathMini.setAttribute('stroke-width', "1.1"); 
     }
 }
 
@@ -224,45 +224,39 @@ function loopFluido() {
     const pos = gtaToPixels(playerPosX, playerPosY);
 
     if (minimapImg) {
-        // Suavização da rotação do radar (Efeito Inércia)
+        // Suavização da rotação
         let targetRot = playerAngle; 
         let diff = targetRot - currentRotation;
         while (diff < -180) diff += 360;
         while (diff > 180) diff -= 360;
-        currentRotation += diff * 0.15; 
+        currentRotation += diff * 0.2; // Aumentei um pouco a velocidade para o carro
 
         const transformCSS = `rotate(${currentRotation}deg)`;
-        const originCSS = `${pos.x}px ${pos.y}px`;
         
-        // Posicionamento centralizado no jogador
-        const offsetCSS = {
-            left: `calc(50% - ${pos.x}px)`,
-            top: `calc(50% - ${pos.y}px)`
-        };
-
-        // Aplica transformações na imagem do mapa
-        minimapImg.style.left = offsetCSS.left;
-        minimapImg.style.top = offsetCSS.top;
-        minimapImg.style.transformOrigin = originCSS;
+        // APLICAÇÃO DIRETA: Evita que o CSS "trave" o cálculo no carro
+        minimapImg.style.transformOrigin = `${pos.x}px ${pos.y}px`;
         minimapImg.style.transform = transformCSS;
+        minimapImg.style.left = `calc(50% - ${pos.x}px)`;
+        minimapImg.style.top = `calc(50% - ${pos.y}px)`;
 
-        // Sincroniza a camada do GPS no Minimapa
+        // Sincroniza o GPS com o mesmo ajuste
         if (gpsMiniSVG) {
-            gpsMiniSVG.style.left = offsetCSS.left;
-            gpsMiniSVG.style.top = offsetCSS.top;
-            gpsMiniSVG.style.transformOrigin = originCSS;
+            gpsMiniSVG.style.transformOrigin = `${pos.x}px ${pos.y}px`;
             gpsMiniSVG.style.transform = transformCSS;
+            gpsMiniSVG.style.left = `calc(50% - ${pos.x}px)`;
+            gpsMiniSVG.style.top = `calc(50% - ${pos.y}px)`;
         }
     }
 
     if (arrow) {
-        /**
-         * CORREÇÃO DA SETA:
-         * No GTA, o mapa gira e a seta fica parada apontando para cima.
-         * Se o mapa rotaciona 45 graus, a seta deve compensar para manter a direção real.
-         */
+        // A seta deve ficar em 0deg porque o MAPA gira embaixo dela
         arrow.style.transform = `translate(-50%, -50%) rotate(0deg)`; 
     }
+    cef.on("browser:ready", () => {
+        hideOriginalHud();
+        // Força ocultar a cada 2 segundos (Resolve o bug da HUD voltar ao entrar no carro)
+        setInterval(hideOriginalHud, 2000); 
+    });
 
     requestAnimationFrame(loopFluido);
 }
@@ -323,22 +317,29 @@ if (mapLayer) {
         if (mapLayer) mapLayer.style.cursor = 'default';
     });
 }
+let rotaAtiva = false; // Variável nova para controle
 
-// Botão Direito para Marcar Destino no Mapa
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (mapLayer.style.display !== 'block') return;
 
+    // Se já tem uma rota e o cara clicou de novo, a gente desmarca
+    if (rotaAtiva) {
+        rotaAtiva = false;
+        atualizarLinhaGPS("0"); // Limpa a linha no mapa
+        if (typeof cef !== 'undefined') cef.emit("setGPS", 0, 0); // Avisa o Pawn para parar
+        return;
+    }
+
     const rect = mapImg.getBoundingClientRect();
-    
-    // Calcula posição exata ignorando zoom e offset de arraste
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
     
     const gtaX = (pxX - (IMG_SIZE / 2)) / SCALE;
     const gtaY = ((IMG_SIZE / 2) - pxY) / SCALE;
 
-    gpsParaLocal(gtaX, gtaY, "Destino Marcado");
+    rotaAtiva = true;
+    if (typeof cef !== 'undefined') cef.emit("setGPS", gtaX, gtaY);
 });
 
 // ============================================================
