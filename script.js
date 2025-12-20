@@ -175,7 +175,7 @@ function renderizarBlipsNoMapa() {
     // Seta do Jogador - CORRIGIDA: usei "-playerAngle" para desinverter
     const pPos = gtaToPixels(playerPosX, playerPosY);
     const pDiv = document.createElement('div');
-    pDiv.innerHTML = '▲';
+    pDiv.innerHTML = '▼';
     pDiv.style.position = 'absolute';
     pDiv.style.color = '#3498db';
     pDiv.style.fontSize = '22px';
@@ -252,4 +252,5 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
 requestAnimationFrame(loopFluido);
