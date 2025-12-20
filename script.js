@@ -21,7 +21,6 @@ const mapImg = document.getElementById('full-map-img');
 const canvas = document.getElementById('map-canvas');
 const hud = document.getElementById('main-hud');
 
-// Lista de locais para ícones (Blips) visíveis no mapa grande
 const blipsFixos = [
     {id: 'hosp', x: 1242, y: -1694, icon: '🏥'},
     {id: 'police', x: 1543, y: -1675, icon: '🚔'},
@@ -39,11 +38,15 @@ function gtaToPixels(x, y) {
 // ============================================================
 // FUNÇÕES DE EXIBIÇÃO E OCULTAR HUD ORIGINAL
 // ============================================================
-// Esconde a interface nativa do jogo via CEF (se disponível)
-        if (typeof cef !== "undefined" && cef.emit) {
-            cef.emit("game:hud:setComponentVisible", "interface", false);
-            cef.emit("game:hud:setComponentVisible", "radar", false);
-        }
+function hideOriginalHud() {
+    if (typeof cef !== 'undefined' && cef.emit) {
+        cef.emit("game:hud:setComponentVisible", "interface", false);
+        cef.emit("game:hud:setComponentVisible", "radar", false);
+    }
+}
+
+// Executa ao carregar
+hideOriginalHud();
 
 function toggleMapa() {
     if (!mapLayer) return;
@@ -53,7 +56,6 @@ function toggleMapa() {
         mapLayer.style.display = 'block';
         if (hud) hud.style.display = 'none';
         
-        // Centraliza o mapa no jogador ao abrir
         const pos = gtaToPixels(playerPosX, playerPosY);
         mapX = (window.innerWidth / 2) - (pos.x * zoom);
         mapY = (window.innerHeight / 2) - (pos.y * zoom);
@@ -71,43 +73,31 @@ function toggleMapa() {
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     
-    // M abre e fecha a imagem do mapa
     if (key === 'm') toggleMapa();
     
-    // H fecha o mapa e pede para o Pawn tirar o foco do mouse
     if (key === 'h') {
         if (typeof cef !== 'undefined') {
-            // 1. Fecha a div do mapa se estiver aberta
             if (mapLayer && mapLayer.style.display === 'block') {
                 mapLayer.style.display = 'none';
                 if (hud) hud.style.display = 'block';
             }
-            
-            // 2. EMITE PARA O PAWN (Seguindo o padrão que você gosta)
-            // Aqui enviamos o evento "fecharFocoMapa"
+            // SINAL PARA O PAWN RETIRAR O FOCO (Subscribed no OnGameModeInit)
             cef.emit("fecharFocoMapa"); 
         }
     }
-    
 });
 
-// LOGICA DE ZOOM ESTILO GTA V: FOCA NA SETA DO MOUSE
+// ZOOM ESTILO GTA V
 window.addEventListener('wheel', (e) => {
     if (mapLayer && mapLayer.style.display === 'block') {
         e.preventDefault();
-        
         const delta = e.deltaY > 0 ? -0.1 : 0.1;
         const oldZoom = zoom;
-        
         zoom = Math.min(Math.max(0.4, zoom + delta), 4.5);
-        
         const mouseX = e.clientX;
         const mouseY = e.clientY;
-
-        // Ajusta posição para o zoom seguir o cursor
         mapX -= (mouseX - mapX) * (zoom / oldZoom - 1);
         mapY -= (mouseY - mapY) * (zoom / oldZoom - 1);
-        
         renderizarBlipsNoMapa();
     }
 }, { passive: false });
@@ -122,21 +112,19 @@ if (mapLayer) {
             mapLayer.style.cursor = 'grabbing';
         }
     });
-
     window.addEventListener('mousemove', (e) => {
         if (!isDragging || mapLayer.style.display !== 'block') return;
         mapX = e.clientX - startX;
         mapY = e.clientY - startY;
         renderizarBlipsNoMapa();
     });
-
     window.addEventListener('mouseup', () => {
         isDragging = false;
         mapLayer.style.cursor = 'default';
     });
 }
 
-// Marcar Local com Botão Direito (GPS)
+// GPS MARCAR LOCAL
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const rect = mapImg.getBoundingClientRect();
@@ -157,10 +145,8 @@ function renderizarBlipsNoMapa() {
     const transformStyle = `translate(${mapX}px, ${mapY}px) scale(${zoom})`;
     mapImg.style.transform = transformStyle;
     canvas.style.transform = transformStyle;
-    
     canvas.innerHTML = ''; 
 
-    // Blips Fixos
     blipsFixos.forEach(blip => {
         const pos = gtaToPixels(blip.x, blip.y);
         const div = document.createElement('div');
@@ -172,16 +158,16 @@ function renderizarBlipsNoMapa() {
         canvas.appendChild(div);
     });
 
-    // Seta do Jogador - CORRIGIDA: usei "-playerAngle" para desinverter
     const pPos = gtaToPixels(playerPosX, playerPosY);
     const pDiv = document.createElement('div');
-    pDiv.innerHTML = '▼';
+    pDiv.innerHTML = '▲'; // Voltamos para o ▲ porque agora o ângulo está corrigido
     pDiv.style.position = 'absolute';
     pDiv.style.color = '#3498db';
     pDiv.style.fontSize = '22px';
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
-    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle + 180}deg) scale(${1.2/zoom})`;
+    // CORREÇÃO DA SETA: Girando para olhar pra frente corretamente
+    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.2/zoom})`;
     canvas.appendChild(pDiv);
 }
 
@@ -191,7 +177,9 @@ function loopFluido() {
     const pos = gtaToPixels(playerPosX, playerPosY);
 
     if (minimap) {
-        let targetRot = -playerAngle; 
+        // CORREÇÃO DO GIRO DO MAPA: Removido o "-" para inverter o eixo Y do giro
+        let targetRot = playerAngle; 
+        
         let diff = targetRot - currentRotation;
         while (diff < -180) diff += 360;
         while (diff > 180) diff -= 360;
@@ -204,6 +192,7 @@ function loopFluido() {
     }
 
     if (arrow) {
+        // Seta do radar acompanhando o giro corrigido
         let targetArrowRot = playerAngle + currentRotation;
         let diffArrow = targetArrowRot - currentArrowRotation;
         while (diffArrow < -180) diffArrow += 360;
@@ -234,7 +223,6 @@ if (typeof cef !== 'undefined') {
     });
 
     cef.on("browser:ready", () => {
-        // Tenta esconder a HUD original em tempos diferentes para garantir que não volte
         hideOriginalHud();
         setTimeout(hideOriginalHud, 100);
         setTimeout(hideOriginalHud, 500);
@@ -252,5 +240,4 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
-
 requestAnimationFrame(loopFluido);
