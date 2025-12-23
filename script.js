@@ -102,11 +102,11 @@ function updateClock() {
  */
 function gpsParaLocal(x, y, nome) {
     if (typeof cef !== 'undefined') {
-        // Se for prefeitura, envia evento específico
         if(nome === 'Prefeitura') {
-            cef.emit("rotaPrefeitura", parseFloat(x), parseFloat(y));
+            // Avisa o servidor: "O cara clicou na prefeitura!"
+            cef.emit("rotaPrefeitura"); 
+            fecharMapa(); 
         }
-        fecharMapa(); 
     }
 }
 
@@ -284,10 +284,13 @@ window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     if (key === 'm') toggleMapa();
     
-    // Tecla H para fechar e limpar foco (Padrão do servidor)
+    // Tecla H para fechar e limpar foco (Padrão do seu servidor)
     if (key === 'h') {
         if (mapLayer && mapLayer.style.display === 'block') toggleMapa();
-        if (typeof cef !== 'undefined') cef.emit("fecharFocoMapa");
+        if (typeof cef !== 'undefined') {
+            // Emite o evento que o Pawn vai escutar para tirar o mouse
+            cef.emit("fecharFocoMapa");
+        }
     }
 });
 
@@ -346,7 +349,8 @@ function enviarCoordenadaAoSAMP(gtaX, gtaY) {
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (typeof cef !== 'undefined') {
-        cef.emit("cancelarRotaGPS"); // Evento único para cancelar
+        // Envia o comando para o Pawn limpar a rota
+        cef.emit("cancelarRotaGPS"); 
         if (marcadorDestino) marcadorDestino.style.display = 'none';
     }
 });
