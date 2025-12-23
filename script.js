@@ -104,8 +104,8 @@ function gpsParaLocal(x, y, nome) {
  * Formato: "x,y|x,y|x,y"
  */
 function atualizarLinhaGPS(pontosString) {
-    const gpsPathGrande = document.getElementById('gps-path'); // Mapa do 'M'
-    const gpsPathMini = document.getElementById('gps-path-mini'); // Radarzinho
+    const gpsPathGrande = document.getElementById('gps-path');
+    const gpsPathMini = document.getElementById('gps-path-mini');
     
     if (!pontosString || pontosString === "" || pontosString === "0") {
         if (gpsPathGrande) gpsPathGrande.setAttribute('points', "");
@@ -124,17 +124,15 @@ function atualizarLinhaGPS(pontosString) {
         }
     });
 
-    // LINHA DO MAPA GRANDE (M)
     if (gpsPathGrande) {
         gpsPathGrande.setAttribute('points', svgPoints);
-        gpsPathGrande.setAttribute('stroke-width', "6"); // Grosso para ver de longe
+        gpsPathGrande.setAttribute('stroke-width', "8");
     }
 
-    // LINHA DO MINIMAPA (RADAR)
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // Tenta com 5 ou 6. Se ficar grosso, abaixe para 4.
-        gpsPathMini.setAttribute('stroke-width', "5"); 
+        // VALOR CHAVE: 1.2 nesta escala de 2500px fica perfeito dentro da rua
+        gpsPathMini.setAttribute('stroke-width', "1.2"); 
     }
 }
 
@@ -225,9 +223,12 @@ function loopFluido() {
     const minimapImg = document.getElementById("map-img");
     const gpsMiniSVG = document.getElementById("gps-svg-mini");
     const arrow = document.querySelector(".player-arrow");
+    
+    // Converte a posição do GTA para pixels no nosso mapa de 2500px
     const pos = gtaToPixels(playerPosX, playerPosY);
 
     if (minimapImg) {
+        // Suavização da rotação
         let targetRot = playerAngle; 
         let diff = targetRot - currentRotation;
         while (diff < -180) diff += 360;
@@ -236,25 +237,30 @@ function loopFluido() {
 
         const transformCSS = `rotate(${currentRotation}deg)`;
         const originCSS = `${pos.x}px ${pos.y}px`;
+        
+        // Posição central: coloca o ponto (pos.x, pos.y) exatamente no meio do círculo
+        const leftPos = `calc(50% - ${pos.x}px)`;
+        const topPos = `calc(50% - ${pos.y}px)`;
 
-        // Move a imagem do mapa
-        minimapImg.style.left = `calc(50% - ${pos.x}px)`;
-        minimapImg.style.top = `calc(50% - ${pos.y}px)`;
+        // APLICA NO MAPA
+        minimapImg.style.left = leftPos;
+        minimapImg.style.top = topPos;
         minimapImg.style.transformOrigin = originCSS;
         minimapImg.style.transform = transformCSS;
 
-        // CORREÇÃO AQUI: O SVG do GPS agora deve apenas ROTACIONAR no centro
+        // APLICA NO GPS (IGUAL AO MAPA PARA NÃO SUMIR)
         if (gpsMiniSVG) {
-            gpsMiniSVG.style.left = `calc(50% - ${pos.x}px)`;
-            gpsMiniSVG.style.top = `calc(50% - ${pos.y}px)`;
+            gpsMiniSVG.style.left = leftPos;
+            gpsMiniSVG.style.top = topPos;
             gpsMiniSVG.style.transformOrigin = originCSS;
             gpsMiniSVG.style.transform = transformCSS;
-            // IMPORTANTE: Não mexemos no width/height aqui, eles ficam 100% no HTML
         }
     }
-    
-    // Seta estática (O mapa gira, ela aponta pra frente)
-    if (arrow) arrow.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+
+    if (arrow) {
+        // Seta parada no centro apontando para cima
+        arrow.style.transform = `translate(-50%, -50%) rotate(0deg)`; 
+    }
 
     requestAnimationFrame(loopFluido);
 }
