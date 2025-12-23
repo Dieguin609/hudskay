@@ -335,37 +335,43 @@ if (mapLayer) {
 }
 let rotaAtiva = false; // Variável nova para controle
 
+// Função ÚNICA para enviar a coordenada ao SAMP
+function enviarCoordenadaAoSAMP(gtaX, gtaY) {
+    if (typeof cef !== 'undefined') {
+        // Envia como FLOAT puro para o Pawn não bugar
+        cef.emit("setGPS", parseFloat(gtaX), parseFloat(gtaY));
+        console.log(`[SAMP] Enviado: X ${gtaX} | Y ${gtaY}`);
+    }
+}
+
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (mapLayer.style.display !== 'block') return;
 
-    // Se clicar no X Roxo, ele some e limpa a rota
-    if (e.target.id === "marcador-gps") {
-        e.target.remove();
-        marcadorDestino = null;
-        cef.emit("setGPS", 0.0, 0.0);
-        return;
-    }
-
     const rect = mapImg.getBoundingClientRect();
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
+    
+    // CONVERSÃO PRECISA: Imagem -> Mundo GTA
     const gtaX = (pxX - (IMG_SIZE / 2)) / SCALE;
     const gtaY = ((IMG_SIZE / 2) - pxY) / SCALE;
 
+    // Gerenciar o Marcador (X Roxo)
     if (!marcadorDestino) {
         marcadorDestino = document.createElement('div');
         marcadorDestino.id = "marcador-gps";
         marcadorDestino.innerHTML = '✕';
-        // COR ROXA AQUI
-        marcadorDestino.style.cssText = "position:absolute; color:#bf00ff; font-size:24px; font-weight:bold; z-index:100; cursor:pointer; text-shadow: 0 0 5px black;";
+        marcadorDestino.style.cssText = "position:absolute; color:#bf00ff; font-size:24px; font-weight:bold; z-index:100; pointer-events:none; text-shadow: 0 0 5px black;";
         canvas.appendChild(marcadorDestino);
     }
+    
+    // Posiciona o X no lugar certo da imagem
     marcadorDestino.style.left = `${pxX}px`;
     marcadorDestino.style.top = `${pxY}px`;
-    marcadorDestino.style.transform = `translate(-50%, -50%) scale(${1.0/zoom})`;
+    marcadorDestino.style.display = "block"; // Garante que não suma
 
-    cef.emit("setGPS", gtaX, gtaY);
+    // Chama a função de envio separada
+    enviarCoordenadaAoSAMP(gtaX, gtaY);
 });
 // ============================================================
 // COMUNICAÇÃO CEF (PAWN -> JAVASCRIPT)
