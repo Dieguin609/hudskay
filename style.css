@@ -190,3 +190,11 @@ body {
 #gps-path-mini {
     vector-effect: non-scaling-stroke;
 }
+.map-icon-fixed {
+    position: absolute;
+    z-index: 50;
+    pointer-events: none;
+    /* Cálculo baseado na sua escala de 2500px */
+    left: 1867px; /* Exemplo de posição calculada para a prefeitura */
+    top: 1478px;
+}

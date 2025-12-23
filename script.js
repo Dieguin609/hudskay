@@ -102,12 +102,11 @@ function updateClock() {
  */
 function gpsParaLocal(x, y, nome) {
     if (typeof cef !== 'undefined') {
-        if (marcadorDestino) marcadorDestino.remove();
-        marcadorDestino = null;
-        
-        // Envia para o SAMP
-        cef.emit("setGPS", parseFloat(x), parseFloat(y));
-        fecharMapa();
+        // Se for prefeitura, envia evento específico
+        if(nome === 'Prefeitura') {
+            cef.emit("rotaPrefeitura", parseFloat(x), parseFloat(y));
+        }
+        fecharMapa(); 
     }
 }
 
@@ -346,34 +345,9 @@ function enviarCoordenadaAoSAMP(gtaX, gtaY) {
 
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (mapLayer.style.display !== 'block') return;
-
-    const rect = mapImg.getBoundingClientRect();
-    
-    // 1. Onde clicou na imagem (Pixels)
-    const pxX = (e.clientX - rect.left) / zoom;
-    const pxY = (e.clientY - rect.top) / zoom;
-    
-    // 2. CONVERSÃO PARA COORDENADAS GTA (A visão que o SAMP precisa)
-    // Usando a escala real do mapa 6000x6000 unidades
-    const gtaX = (pxX / 2500 * 6000) - 3000;
-    const gtaY = 3000 - (pxY / 2500 * 6000);
-
-    // 3. Criar o X Roxo no local do clique
-    if (!marcadorDestino) {
-        marcadorDestino = document.createElement('div');
-        marcadorDestino.id = "marcador-gps";
-        marcadorDestino.innerHTML = '✕';
-        marcadorDestino.style.cssText = "position:absolute; color:#bf00ff; font-size:24px; font-weight:bold; z-index:100; pointer-events:none; text-shadow: 0 0 5px black;";
-        canvas.appendChild(marcadorDestino);
-    }
-    marcadorDestino.style.left = `${pxX}px`;
-    marcadorDestino.style.top = `${pxY}px`;
-    marcadorDestino.style.display = "block";
-
-    // 4. Envia para o SAMP processar a rota
     if (typeof cef !== 'undefined') {
-        cef.emit("setGPS", gtaX, gtaY);
+        cef.emit("cancelarRotaGPS"); // Evento único para cancelar
+        if (marcadorDestino) marcadorDestino.style.display = 'none';
     }
 });
 // ============================================================
