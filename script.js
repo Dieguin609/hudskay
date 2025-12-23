@@ -104,8 +104,8 @@ function gpsParaLocal(x, y, nome) {
  * Formato: "x,y|x,y|x,y"
  */
 function atualizarLinhaGPS(pontosString) {
-    const gpsPathGrande = document.getElementById('gps-path');
-    const gpsPathMini = document.getElementById('gps-path-mini');
+    const gpsPathGrande = document.getElementById('gps-path'); // Mapa do 'M'
+    const gpsPathMini = document.getElementById('gps-path-mini'); // Radarzinho
     
     if (!pontosString || pontosString === "" || pontosString === "0") {
         if (gpsPathGrande) gpsPathGrande.setAttribute('points', "");
@@ -124,16 +124,17 @@ function atualizarLinhaGPS(pontosString) {
         }
     });
 
+    // LINHA DO MAPA GRANDE (M)
     if (gpsPathGrande) {
         gpsPathGrande.setAttribute('points', svgPoints);
-        gpsPathGrande.setAttribute('stroke-width', "6"); // Linha no Mapa Grande (M)
+        gpsPathGrande.setAttribute('stroke-width', "6"); // Grosso para ver de longe
     }
 
+    // LINHA DO MINIMAPA (RADAR)
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // AQUI ESTÁ O SEGREDO: Valor 1.0 para a linha ficar fina nas ruas do radar
-        gpsPathMini.setAttribute('stroke-width', "0.1"); 
-        gpsPathMini.style.vectorEffect = "non-scaling-stroke";
+        // Como agora usamos viewBox no HTML, 4.0 ou 5.0 aqui vai ficar fininho no radar
+        gpsPathMini.setAttribute('stroke-width', "5"); 
     }
 }
 

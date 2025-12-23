@@ -26,8 +26,8 @@
             <div class="minimap-circle">
                 <img src="map.png" id="map-img">
                 
-                <svg id="gps-svg-mini" style="position: absolute; top: 0; left: 0; width: 2500px; height: 2500px; pointer-events: none; z-index: 2;">
-                    <polyline id="gps-path-mini" points="" style="fill:none; stroke:#bf00ff; stroke-width:45; stroke-linejoin:round; stroke-linecap:round;" />
+                <svg id="gps-svg-mini" viewBox="0 0 2500 2500" preserveAspectRatio="xMidYMid slice" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;">
+                    <polyline id="gps-path-mini" points="" fill="none" stroke="#bf00ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
 
                 <div class="player-arrow"></div>
@@ -53,6 +53,13 @@
                 <div class="loc-icon">🏥</div>
                 <div class="loc-info">
                     <span class="loc-name">Hospital Central</span>
+                    <span class="loc-dist">Clique para traçar rota</span>
+                </div>
+            </div>
+            <div class="location-item-alt" onclick="gpsParaLocal(1242, -1694, 'Hospital 2')">
+                <div class="loc-icon">🏥</div>
+                <div class="loc-info">
+                    <span class="loc-name">Hospital Regional</span>
                     <span class="loc-dist">Clique para traçar rota</span>
                 </div>
             </div>
