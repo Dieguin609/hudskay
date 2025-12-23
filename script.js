@@ -132,7 +132,7 @@ function atualizarLinhaGPS(pontosString) {
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
         // AQUI ESTÁ O SEGREDO: Valor 1.0 para a linha ficar fina nas ruas do radar
-        gpsPathMini.setAttribute('stroke-width', "1.0"); 
+        gpsPathMini.setAttribute('stroke-width', "0.1"); 
     }
 }
 
