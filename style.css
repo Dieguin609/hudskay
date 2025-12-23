@@ -187,3 +187,6 @@ body {
 .location-header, .loc-dist, .location-footer {
     display: none;
 }
+#gps-path-mini {
+    vector-effect: non-scaling-stroke;
+}

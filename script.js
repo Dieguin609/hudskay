@@ -126,12 +126,13 @@ function atualizarLinhaGPS(pontosString) {
 
     if (gpsPathGrande) {
         gpsPathGrande.setAttribute('points', svgPoints);
-        gpsPathGrande.setAttribute('stroke-width', "8"); // Espessura Mapa Aberto
+        gpsPathGrande.setAttribute('stroke-width', "6"); // Linha no Mapa Grande (M)
     }
+
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // REDUÇÃO AQUI: Valor menor para a linha não ficar gigante no minimapa
-        gpsPathMini.setAttribute('stroke-width', "0.1"); 
+        // AQUI ESTÁ O SEGREDO: Valor 1.0 para a linha ficar fina nas ruas do radar
+        gpsPathMini.setAttribute('stroke-width', "1.0"); 
     }
 }
 
@@ -205,11 +206,12 @@ function renderizarBlipsNoMapa() {
     pDiv.innerHTML = '▲'; 
     pDiv.style.position = 'absolute';
     pDiv.style.color = '#bf00ff'; 
-    pDiv.style.fontSize = '22px';
+    pDiv.style.fontSize = '20px'; // Tamanho fixo da fonte
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
-    // Gira a seta do player de acordo com o ângulo do jogo
-    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${0.2/zoom})`;
+
+    // Ajuste na escala para ela não crescer com o zoom do mapa grande
+    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.0 / zoom})`;
     canvas.appendChild(pDiv);
 }
 
