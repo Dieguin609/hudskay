@@ -102,8 +102,12 @@ function updateClock() {
  */
 function gpsParaLocal(x, y, nome) {
     if (typeof cef !== 'undefined') {
-        cef.emit("setGPS", x, y);
-        console.log(`[GPS] Destino definido: ${nome || "Marcado no Mapa"}`);
+        if (marcadorDestino) marcadorDestino.remove();
+        marcadorDestino = null;
+        
+        // Envia para o SAMP
+        cef.emit("setGPS", parseFloat(x), parseFloat(y));
+        fecharMapa();
     }
 }
 
@@ -335,30 +339,33 @@ mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (mapLayer.style.display !== 'block') return;
 
+    // Se clicar no X Roxo, ele some e limpa a rota
+    if (e.target.id === "marcador-gps") {
+        e.target.remove();
+        marcadorDestino = null;
+        cef.emit("setGPS", 0.0, 0.0);
+        return;
+    }
+
     const rect = mapImg.getBoundingClientRect();
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
-    
     const gtaX = (pxX - (IMG_SIZE / 2)) / SCALE;
     const gtaY = ((IMG_SIZE / 2) - pxY) / SCALE;
 
-    // Criar/Mover o X Vermelho
     if (!marcadorDestino) {
         marcadorDestino = document.createElement('div');
+        marcadorDestino.id = "marcador-gps";
         marcadorDestino.innerHTML = '✕';
-        marcadorDestino.style.cssText = "position:absolute; color:red; font-size:24px; font-weight:bold; z-index:100; pointer-events:none; text-shadow: 0 0 5px black;";
+        // COR ROXA AQUI
+        marcadorDestino.style.cssText = "position:absolute; color:#bf00ff; font-size:24px; font-weight:bold; z-index:100; cursor:pointer; text-shadow: 0 0 5px black;";
         canvas.appendChild(marcadorDestino);
     }
     marcadorDestino.style.left = `${pxX}px`;
     marcadorDestino.style.top = `${pxY}px`;
     marcadorDestino.style.transform = `translate(-50%, -50%) scale(${1.0/zoom})`;
 
-    // TENTATIVA DE ENVIO DIRETO (Ajustado)
-    if (window.cef) {
-        // Usamos parseFloat para garantir que vá como número real
-        cef.emit("setGPS", parseFloat(gtaX), parseFloat(gtaY)); 
-        console.log("GPS enviado para o SAMP:", gtaX, gtaY);
-    }
+    cef.emit("setGPS", gtaX, gtaY);
 });
 // ============================================================
 // COMUNICAÇÃO CEF (PAWN -> JAVASCRIPT)
