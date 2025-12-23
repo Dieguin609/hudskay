@@ -134,7 +134,7 @@ function atualizarLinhaGPS(pontosString) {
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
         // Como agora usamos viewBox no HTML, 4.0 ou 5.0 aqui vai ficar fininho no radar
-        gpsPathMini.setAttribute('stroke-width', "3"); 
+        gpsPathMini.setAttribute('stroke-width', "5"); 
     }
 }
 
