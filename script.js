@@ -349,14 +349,17 @@ mapLayer?.addEventListener('contextmenu', (e) => {
     if (mapLayer.style.display !== 'block') return;
 
     const rect = mapImg.getBoundingClientRect();
+    
+    // 1. Onde clicou na imagem (Pixels)
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
     
-    // CONVERSÃO PRECISA: Imagem -> Mundo GTA
-    const gtaX = (pxX - (IMG_SIZE / 2)) / SCALE;
-    const gtaY = ((IMG_SIZE / 2) - pxY) / SCALE;
+    // 2. CONVERSÃO PARA COORDENADAS GTA (A visão que o SAMP precisa)
+    // Usando a escala real do mapa 6000x6000 unidades
+    const gtaX = (pxX / 2500 * 6000) - 3000;
+    const gtaY = 3000 - (pxY / 2500 * 6000);
 
-    // Gerenciar o Marcador (X Roxo)
+    // 3. Criar o X Roxo no local do clique
     if (!marcadorDestino) {
         marcadorDestino = document.createElement('div');
         marcadorDestino.id = "marcador-gps";
@@ -364,14 +367,14 @@ mapLayer?.addEventListener('contextmenu', (e) => {
         marcadorDestino.style.cssText = "position:absolute; color:#bf00ff; font-size:24px; font-weight:bold; z-index:100; pointer-events:none; text-shadow: 0 0 5px black;";
         canvas.appendChild(marcadorDestino);
     }
-    
-    // Posiciona o X no lugar certo da imagem
     marcadorDestino.style.left = `${pxX}px`;
     marcadorDestino.style.top = `${pxY}px`;
-    marcadorDestino.style.display = "block"; // Garante que não suma
+    marcadorDestino.style.display = "block";
 
-    // Chama a função de envio separada
-    enviarCoordenadaAoSAMP(gtaX, gtaY);
+    // 4. Envia para o SAMP processar a rota
+    if (typeof cef !== 'undefined') {
+        cef.emit("setGPS", gtaX, gtaY);
+    }
 });
 // ============================================================
 // COMUNICAÇÃO CEF (PAWN -> JAVASCRIPT)
