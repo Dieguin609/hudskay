@@ -209,7 +209,7 @@ function renderizarBlipsNoMapa() {
     pDiv.style.left = `${pPos.x}px`;
     pDiv.style.top = `${pPos.y}px`;
     // Gira a seta do player de acordo com o ângulo do jogo
-    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${1.2/zoom})`;
+    pDiv.style.transform = `translate(-50%, -50%) rotate(${-playerAngle}deg) scale(${0.2/zoom})`;
     canvas.appendChild(pDiv);
 }
 
