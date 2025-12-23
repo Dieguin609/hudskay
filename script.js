@@ -133,7 +133,7 @@ function atualizarLinhaGPS(pontosString) {
     // LINHA DO MINIMAPA (RADAR)
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // Como agora usamos viewBox no HTML, 4.0 ou 5.0 aqui vai ficar fininho no radar
+        // Tenta com 5 ou 6. Se ficar grosso, abaixe para 4.
         gpsPathMini.setAttribute('stroke-width', "5"); 
     }
 }
@@ -232,24 +232,24 @@ function loopFluido() {
         let diff = targetRot - currentRotation;
         while (diff < -180) diff += 360;
         while (diff > 180) diff -= 360;
-        currentRotation += diff * 0.2; // Rotação mais ágil para veículos
+        currentRotation += diff * 0.15; 
 
-        // Aplicação direta no style (Evita o travamento do radar no carro)
-        const transform = `rotate(${currentRotation}deg)`;
-        const origin = `${pos.x}px ${pos.y}px`;
-        const left = `calc(50% - ${pos.x}px)`;
-        const top = `calc(50% - ${pos.y}px)`;
+        const transformCSS = `rotate(${currentRotation}deg)`;
+        const originCSS = `${pos.x}px ${pos.y}px`;
 
-        minimapImg.style.transformOrigin = origin;
-        minimapImg.style.transform = transform;
-        minimapImg.style.left = left;
-        minimapImg.style.top = top;
+        // Move a imagem do mapa
+        minimapImg.style.left = `calc(50% - ${pos.x}px)`;
+        minimapImg.style.top = `calc(50% - ${pos.y}px)`;
+        minimapImg.style.transformOrigin = originCSS;
+        minimapImg.style.transform = transformCSS;
 
+        // CORREÇÃO AQUI: O SVG do GPS agora deve apenas ROTACIONAR no centro
         if (gpsMiniSVG) {
-            gpsMiniSVG.style.transformOrigin = origin;
-            gpsMiniSVG.style.transform = transform;
-            gpsMiniSVG.style.left = left;
-            gpsMiniSVG.style.top = top;
+            gpsMiniSVG.style.left = `calc(50% - ${pos.x}px)`;
+            gpsMiniSVG.style.top = `calc(50% - ${pos.y}px)`;
+            gpsMiniSVG.style.transformOrigin = originCSS;
+            gpsMiniSVG.style.transform = transformCSS;
+            // IMPORTANTE: Não mexemos no width/height aqui, eles ficam 100% no HTML
         }
     }
     
