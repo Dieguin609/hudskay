@@ -29,6 +29,8 @@ let playerAngle = 0;
 let currentRotation = 0;      
 let currentArrowRotation = 0; 
 
+let marcadorDestino = null; // Para a cruzinha do GPS
+
 // Elementos do DOM
 const mapLayer = document.getElementById('big-map-layer');
 const mapContainer = document.getElementById('map-container');
@@ -66,9 +68,11 @@ function gtaToPixels(x, y) {
 // FUNÇÕES DE EXIBIÇÃO
 // ============================================================
 function hideOriginalHud() {
-    if (typeof cef !== 'undefined' && cef.emit) {
-        cef.emit("game:hud:setComponentVisible", "interface", false);
+    if (typeof cef !== 'undefined') {
+        // MUDANÇA AQUI: Trocamos os números 0 e 1 pelas palavras que você usa
         cef.emit("game:hud:setComponentVisible", "radar", false);
+        cef.emit("game:hud:setComponentVisible", "interface", false);
+        console.log("[CEF] HUD Original Ocultada com os comandos: radar e interface.");
     }
 }
 
@@ -131,8 +135,8 @@ function atualizarLinhaGPS(pontosString) {
 
     if (gpsPathMini) {
         gpsPathMini.setAttribute('points', svgPoints);
-        // VALOR CHAVE: 1.2 nesta escala de 2500px fica perfeito dentro da rua
-        gpsPathMini.setAttribute('stroke-width', "1.2"); 
+        // VALOR CHAVE: 2.2 nesta escala de 2500px fica perfeito dentro da rua
+        gpsPathMini.setAttribute('stroke-width', "2.2"); 
     }
 }
 
@@ -326,15 +330,29 @@ let rotaAtiva = false; // Variável nova para controle
 // 1. Correção para marcar/desmarcar e não ir para o ponto 0
 mapLayer?.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+    if (mapLayer.style.display !== 'block') return;
+
+    // Pega a posição real da imagem considerando zoom e arraste
     const rect = mapImg.getBoundingClientRect();
     const pxX = (e.clientX - rect.left) / zoom;
     const pxY = (e.clientY - rect.top) / zoom;
+    
     const gtaX = (pxX - (IMG_SIZE / 2)) / SCALE;
     const gtaY = ((IMG_SIZE / 2) - pxY) / SCALE;
 
+    // Criar/Mover a Cruzinha (Feedback Visual)
+    if (!marcadorDestino) {
+        marcadorDestino = document.createElement('div');
+        marcadorDestino.innerHTML = '✕';
+        marcadorDestino.style.cssText = "position:absolute; color:red; font-size:24px; font-weight:bold; z-index:100; pointer-events:none; text-shadow: 0 0 5px black;";
+        canvas.appendChild(marcadorDestino);
+    }
+    marcadorDestino.style.left = `${pxX}px`;
+    marcadorDestino.style.top = `${pxY}px`;
+    marcadorDestino.style.transform = `translate(-50%, -50%) scale(${1.0/zoom})`;
+
     if (typeof cef !== 'undefined') {
-        // Envia apenas X e Y para o Pawn não se perder com o Z
-        cef.emit("setGPS", gtaX, gtaY); 
+        cef.emit("setGPS", gtaX, gtaY, 0.0);
     }
 });
 
